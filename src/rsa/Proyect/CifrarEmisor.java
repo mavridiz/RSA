@@ -28,6 +28,7 @@ public class CifrarEmisor {
     }
     
     public byte[] secretPublic( SecretKey Key, PublicKey publicKey ) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
+        
         byte[] key = Key.getEncoded();
         
         Cipher encryptCipher = Cipher.getInstance("RSA");
@@ -35,5 +36,6 @@ public class CifrarEmisor {
 
         byte[] encryptedSecretKey = encryptCipher.doFinal(key);
         return encryptedSecretKey;
+        
     }
 }

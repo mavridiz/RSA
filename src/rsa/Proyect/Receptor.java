@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -13,10 +14,13 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 
 public class Receptor {
 
@@ -27,6 +31,8 @@ public class Receptor {
             Encoder e = new Encoder();
             Scanner sc = new Scanner(System.in);
             Comunication comunicator = new Comunication();
+            Decifrar decifrador = new Decifrar();
+            
             
             //Autoridad Certificadora
 
@@ -48,23 +54,33 @@ public class Receptor {
             System.out.println("Ingresa la IP del emisor: ");
             InetAddress ipE = InetAddress.getByName(sc.nextLine());
 
-            Socket socketMessage = new Socket(ipE, PORT);
+            
+            //Addendum  SecretKey
+            Socket socketSecAdd = new Socket(ipE, PORT);
 
-            byte[] msjByte = new byte[128];
-            socketMessage.getInputStream().read(msjByte);
+            byte[] msjSecAddByte = new byte[128];
+            socketSecAdd.getInputStream().read(msjSecAddByte);
 
-            socketMessage.close();
-            System.out.println("Mensaje Cifrado Recibido");
+            socketSecAdd.close();
+            
+            //SecretKey Public
+            Socket socketPubSec = new Socket(ipE, PORT);
 
-            String msj = mDecrypt(serverPrivateKey, msjByte);
+            byte[] msjPubSecByte = new byte[128];
+            socketPubSec.getInputStream().read(msjPubSecByte);
 
-        } catch (IOException ex) {
+            socketPubSec.close();
+            
+            //SecretKey y Addendum
+            
+            SecretKey sKey = decifrador.secretPublicDecypher(PrivateKeyReceptor, msjPubSecByte);
+            
+            String addendum = decifrador.secretAddendumDecypher(sKey, msjSecAddByte);
+
+        } 
+        catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException ex) {
             System.out.println(ex);
-        } catch (NoSuchAlgorithmException ex) {
-            System.out.println(ex);
-        } catch (InvalidKeySpecException ex) {
-            System.out.println(ex);
-    }
+        }
 }
     public static String mDecrypt(PrivateKey pk, byte[] msj) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, BadPaddingException, IllegalBlockSizeException {
         Cipher decryptCipher = Cipher.getInstance("RSA");
